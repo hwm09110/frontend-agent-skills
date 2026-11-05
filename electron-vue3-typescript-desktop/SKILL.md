@@ -1,6 +1,7 @@
 ---
 name: electron-vue3-typescript-desktop
 description: Guides building and maintaining Electron desktop apps with Vue 3, TypeScript, Vite, Pinia, SCSS themes, preload IPC, and tray/window lifecycle. Use when the user works on electron/main, preload, renderer integration, packaged paths, dark mode, or desktop-specific UX.
+disable-model-invocation: true
 ---
 
 # Electron + Vue3 + TypeScript 桌面应用开发
@@ -28,6 +29,57 @@ description: Guides building and maintaining Electron desktop apps with Vue 3, T
 1. **通道命名**：`domain:action`（如 `todo:export`），避免与内置事件冲突。
 2. **类型**：preload 暴露的 API 与 main `ipcMain.handle` 入参/返回值在共享 `types` 或 `contracts` 中定义，renderer 只依赖接口类型。
 3. **错误**：main 抛出的错误在 preload 层转成 `{ ok: false, message }`，避免把 stack 直接给 UI。
+
+### IPC 示例
+
+**preload**（`electron/preload/index.ts`）：
+
+```typescript
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  exportData: (payload: ExportPayload): Promise<ExportResult> =>
+    ipcRenderer.invoke('todo:export', payload),
+  getAppPath: (): Promise<string> =>
+    ipcRenderer.invoke('app:getPath'),
+});
+
+interface Window {
+  electronAPI?: {
+    exportData: (payload: ExportPayload) => Promise<ExportResult>;
+    getAppPath: () => Promise<string>;
+  };
+}
+```
+
+**main**（`electron/main/index.ts`）：
+
+```typescript
+import { ipcMain } from 'electron';
+
+ipcMain.handle('todo:export', async (_event, payload: ExportPayload) => {
+  try {
+    const result = await doExport(payload);
+    return { ok: true, path: result.path };
+  } catch (err) {
+    // 不把 stack 暴露给 renderer
+    return { ok: false, message: err.message };
+  }
+});
+```
+
+**renderer**（Vue 组件）：
+
+```typescript
+const exportTodo = async () => {
+  const result = await window.electronAPI?.exportData({ id: todoId });
+  if (result?.ok) {
+    message.success('导出成功');
+  } else {
+    message.error(result?.message ?? '导出失败');
+  }
+};
+```
 
 ## Vue3 渲染进程
 
