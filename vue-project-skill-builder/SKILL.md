@@ -1,11 +1,11 @@
 ---
 name: vue-project-skill-builder
-description: 先询问用户当前使用的 AI 编辑器，再分析已有 Vue Web 项目的结构、技术栈、页面规范、请求封装、API 组织、组件体系、状态管理和样式方案，最后基于分析结果为当前项目生成适配该编辑器目录结构的中文开发 skill。适用于需要把一个现有 Vue Web 仓库沉淀成仅供当前项目使用、且存放到正确编辑器目录下的专属开发规范场景。
+description: 先询问用户当前使用的 AI 编辑器，再分析已有 Vue Web 项目并生成适配该编辑器目录的中文项目开发 skill；生成成功后默认删除分析阶段中间产物。适用于把现有 Vue Web 仓库沉淀为仅供当前项目使用的专属开发规范场景。
 ---
 
 # Vue 项目分析与 Skill 生成器
 
-这是一个单入口、双阶段的 skill。必须先分析项目，再基于分析结果生成项目级 skill。不要跳过分析阶段直接生成规范。
+这是一个单入口、三阶段的 skill。必须先分析项目，再基于分析结果生成项目级 skill，最后清理分析阶段的中间产物。不要跳过分析阶段直接生成规范。
 
 除非用户明确要求使用其他语言，否则默认使用中文响应，并默认生成中文产物。
 
@@ -107,6 +107,37 @@ description: 先询问用户当前使用的 AI 编辑器，再分析已有 Vue W
 - `references/skill-writing-rules.md`
 - `references/missing-info-policy.md`
 - `references/openai-yaml-template.md`
+- `references/cleanup-rules.md`
+
+### 第三阶段：清理分析中间产物
+
+目标是在项目级 skill 已成功生成后，删除第一阶段写出的分析文件，避免仓库残留仅供生成流程使用的中间产物。
+
+默认清理范围：
+
+- `.codex/project-analysis/project-analysis.json`
+- `.codex/project-analysis/project-analysis.md`
+- 若 `.codex/project-analysis/` 目录在删除后为空，一并删除该空目录
+- 若 `.codex/` 目录在删除后为空，且其中没有 `project-skill/` 或其他保留内容，一并删除该空目录
+
+如果用户在第一阶段指定了其他分析输出路径，清理时删除用户指定路径下的对应分析文件，而不是只删默认路径。
+
+这一阶段必须：
+
+- 仅在第二阶段项目级 skill 已成功写出后执行
+- 只删除分析阶段产物，绝不删除已生成的项目级 skill 目录
+- 清理前确认目标文件确实是本轮（或明确指定的）分析产物
+- 清理完成后在回复中说明已删除哪些分析文件
+
+例外（不要自动删除）：
+
+- 用户明确要求保留分析文件
+- 第二阶段生成失败或未完成
+- 目标路径下还有与本次分析无关、用户另作他用的文件时，只删分析文件本身，不误删其他内容
+
+清理规则参见：
+
+- `references/cleanup-rules.md`
 
 ## 第一阶段的硬性要求
 
@@ -242,6 +273,8 @@ description: 先询问用户当前使用的 AI 编辑器，再分析已有 Vue W
 - 生成格式和目录是否与目标编辑器匹配
 - `SKILL.md` 是否足够短、足够明确
 - references 是否覆盖了后续 AI 最需要反复查阅的信息
+- 第二阶段成功后，是否已按规则清理分析中间产物
+- 清理时是否误删了项目级 skill 或其他无关文件
 
 ## 禁止事项
 
@@ -254,6 +287,8 @@ description: 先询问用户当前使用的 AI 编辑器，再分析已有 Vue W
 - 不要在没有证据时断言某个目录就是全项目规范入口
 - 不要默认把生成出的项目级 skill 部署到全局 `CODEX_HOME/skills`
 - 不要忽略目标编辑器的目录差异
+- 不要在项目级 skill 生成失败时删除分析文件
+- 不要把分析中间产物当作需要长期保留的仓库文档，除非用户明确要求保留
 
 ## 参考文件
 
@@ -268,3 +303,4 @@ description: 先询问用户当前使用的 AI 编辑器，再分析已有 Vue W
 - `references/skill-writing-rules.md`
 - `references/missing-info-policy.md`
 - `references/openai-yaml-template.md`
+- `references/cleanup-rules.md`

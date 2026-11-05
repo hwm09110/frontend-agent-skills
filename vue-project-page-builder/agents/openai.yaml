@@ -1,4 +1,0 @@
-﻿interface:
-  display_name: "Vue 项目页面开发规范"
-  short_description: "按项目规范编写 Vue 页面，优先复用已有组件并判断是否需要封装。"
-  default_prompt: "Use $vue-project-page-builder to inspect the project first, reuse existing components, follow repository conventions, and build the requested Vue page."
